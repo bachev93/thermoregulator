@@ -1,4 +1,4 @@
-#include <cstdio>
+// #include <cstdio>
 #include <iterator>
 #include <numeric>
 
@@ -17,7 +17,7 @@ void OperatingMode::change_mode() {
   case OperatingModeType::HIGH:
     params_ = constants::low_mode; break;
   default:
-    printf("unknown operating mode type\r\n");
+    // printf("unknown operating mode type\r\n");
     break;
   }
 }
@@ -32,7 +32,7 @@ void OperatingMode::blink_leds() const {
 }
 
 void OperatingMode::reset_leds() const {
-    printf("reset status leds\r\n");
+    // printf("reset status leds\r\n");
     HAL_GPIO_WritePin(constants::mode_led1.port, constants::mode_led1.pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(constants::mode_led2.port, constants::mode_led2.pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(constants::mode_led3.port, constants::mode_led3.pin, GPIO_PIN_RESET);
@@ -87,22 +87,22 @@ void change_addr_led_behaviour(DeviceStatus dev_state, Color color) {
   case DeviceStatus::DEVICE_WORKING:
     set_addr_led_color(color);
     // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-    printf("device is working, address LED color depends on battery charging level\r\n");
+    // printf("device is working, address LED color depends on battery charging level\r\n");
     break;
   case DeviceStatus::DEVICE_CHARGING:
     set_addr_led_color(Color::Blue);
     // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-    printf("device is charging, PWM blue address LED\r\n");
+    // printf("device is charging, PWM blue address LED\r\n");
     break;
   case DeviceStatus::DEVICE_CHARGED:
     set_addr_led_color(Color::Blue);
     // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-    printf("device is charged, blue address LED\r\n");
+    // printf("device is charged, blue address LED\r\n");
     break;
   default:
     set_addr_led_color(color);
     // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-    printf("unknown charging status\r\n");
+    // printf("unknown charging status\r\n");
     break;
   }
 }
@@ -125,7 +125,7 @@ float get_battery_voltage(ADC_HandleTypeDef* hadc) {
 }
 
 void poweroff() {
-  printf("powering off\r\n");
+  // printf("powering off\r\n");
 
   // GPIO_InitTypeDef GPIO_InitStruct = {0};
   // GPIO_InitStruct.Pin = constants::btn.pin;

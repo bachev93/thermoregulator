@@ -22,7 +22,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+// #include <cstdio>
 
+#include "constants.h"
+#include "auxiliary.h"
+#include "tmp117.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,12 +61,35 @@ static void MX_ADC_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
-
+// void do_main_work(thermoregulator::OperatingMode& mode, thermoregulator::tmp117& thermosensor);
+void do_main_work(thermoregulator::OperatingMode& mode);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+namespace {
+uint8_t adc_tick = 0;
 
+thermoregulator::DeviceStatus last_device_state = thermoregulator::DeviceStatus::UNKNOWN;
+bool check_device_state = true;
+
+bool is_heating = true;
+uint16_t working_tick = 0;
+
+bool btn_1st_press = false;
+uint8_t status_tick = 0;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  ++adc_tick;
+  ++working_tick;
+
+  check_device_state = true;
+
+  if(btn_1st_press) {
+    ++status_tick;
+  }
+}
 /* USER CODE END 0 */
 
 /**
@@ -72,7 +99,7 @@ static void MX_TIM1_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+  using namespace thermoregulator;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -97,16 +124,77 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_TIM_Base_Start_IT(&htim1);
+  HAL_ADCEx_Calibration_Start(&hadc);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  OperatingMode mode;
+  mode.blink_leds();
+  HAL_Delay(constants::status_time * 1000);
+  mode.reset_leds();
+  // tmp117 thermosensor(&hi2c1, thermoregulator::ADDR::FIRST, mode.current_mode().low_threshold,
+  //                     mode.current_mode().high_threshold);
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    if(check_device_state) {
+      check_device_state = false;
+
+      auto device_state = thermoregulator::device_status();
+      if(last_device_state != device_state) {
+        last_device_state = device_state;
+        change_addr_led_behaviour(last_device_state);
+      }
+    }
+
+    if(last_device_state == thermoregulator::DeviceStatus::DEVICE_WORKING) {
+      // do_main_work(mode, thermosensor);
+      do_main_work(mode);
+    } else {
+      continue;
+    }
+
+    auto button_press_state = check_button_press(constants::btn.port, constants::btn.pin, 50, 3000);
+    if(button_press_state == ButtonPressType::SHORT_PRESS) {
+      // printf("short button press\r\n");
+      if(btn_1st_press) {
+        mode.change_mode();
+        mode.blink_leds();
+        status_tick = 0;
+      } else {
+        btn_1st_press = true;
+        mode.blink_leds();
+      }
+    } else if(button_press_state == ButtonPressType::LONG_PRESS) {
+      // printf("long button press\r\n");
+      poweroff();
+    }
+
+    if(status_tick >= constants::status_time) {
+      btn_1st_press = false;
+      status_tick = 0;
+      mode.reset_leds();
+    }
+
+    if(adc_tick >= constants::battery_check_time) {
+      adc_tick = 0;
+
+      // auto temperature = thermosensor.get_temperature();
+      // printf("The temperature now is %d", temperature);
+
+      auto bat_voltage = get_battery_voltage(&hadc);
+      auto addr_led_color = get_color_by_battery_level(bat_voltage);
+      change_addr_led_behaviour(last_device_state, addr_led_color);
+      // printf("battery voltage: %f\r\n", bat_voltage);
+      if(bat_voltage < constants::vbat_low_level) {
+        // printf("battery charge level below %f volts\r\n", constants::vbat_low_level);
+        poweroff();
+      }
+    }
   }
   /* USER CODE END 3 */
 }
@@ -338,7 +426,32 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void do_main_work(thermoregulator::OperatingMode& mode) {
+  using namespace thermoregulator;
+  if(is_heating) {
+    if(working_tick < constants::working_time) {
+      //do main job
+    } else {
+      working_tick = 0;
+      is_heating = false;
 
+      // TODO: set dev to idle mode
+      // thermosensor.set_low_limit(0);
+      // thermosensor.set_high_limit(0);
+      // printf("Go to idle\r\n");
+    }
+  } else {
+    if(working_tick >= constants::idle_time) {
+      working_tick = 0;
+      is_heating = true;
+
+      // TODO: set dev to working mode
+      // thermosensor.set_low_limit(mode.current_mode().low_threshold);
+      // thermosensor.set_high_limit(mode.current_mode().high_threshold);
+      // printf("Go to work\r\n");
+    }
+  }
+}
 /* USER CODE END 4 */
 
 /**
