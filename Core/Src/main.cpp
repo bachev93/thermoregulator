@@ -22,8 +22,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-// #include <cstdio>
-
 #include "constants.h"
 #include "auxiliary.h"
 #include "tmp117.h"
