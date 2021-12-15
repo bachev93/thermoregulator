@@ -1,8 +1,6 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#include <cstdint>
-
 #include "stm32f0xx_hal_gpio.h"
 
 namespace thermoregulator {

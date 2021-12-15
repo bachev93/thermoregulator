@@ -10,10 +10,7 @@ target: thermoregulator
 # Can be C or C++
 language: C++
 
-# optimization: Og
-optimization: O2
-
-debug: 0
+optimization: Og
 
 # MCU settings
 targetMCU: stm32f0x

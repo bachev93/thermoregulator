@@ -1,8 +1,6 @@
 #ifndef AUXILIARY_H
 #define AUXILIARY_H
 
-#include <cstdint>
-
 #include "stm32f0xx.h"
 #include "stm32f0xx_hal_gpio.h"
 #include "stm32f0xx_hal_adc.h"
