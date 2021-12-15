@@ -2,7 +2,10 @@ Release
 Debug
 build
 .vscode
+.settings
+.project
+.mxproject
+.cproject
 STM32-for-VSCode.config.yaml
 STM32Make.make
 openocd.cfg
-.mxproject
