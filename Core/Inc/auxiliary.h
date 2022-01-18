@@ -4,19 +4,25 @@
 #include "stm32f0xx.h"
 #include "stm32f0xx_hal_gpio.h"
 #include "stm32f0xx_hal_adc.h"
+#include "stm32f0xx_hal_i2c.h"
 
 #include "constants.h"
+#include "tmp117.h"
 
 namespace thermoregulator {
 class OperatingMode {
   public:
-    OperatingMode();
+    explicit OperatingMode(I2C_HandleTypeDef* hi2c);
     void change_mode();
     void blink_leds() const;
     void reset_leds() const;
     OperatingModeParams current_mode() const;
+    void enable_heating();
+    void disable_heating();
   private:
     OperatingModeParams params_;
+    tmp117 sensor1_;
+    tmp117 sensor2_;
 };
 
 enum class Color {Red, Green, Blue, Orange, Yellow};

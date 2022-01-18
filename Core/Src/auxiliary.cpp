@@ -5,8 +5,20 @@
 // #include "sk6812.h"
 
 namespace thermoregulator {
-OperatingMode::OperatingMode() :
-  params_(constants::low_mode) {}
+OperatingMode::OperatingMode(I2C_HandleTypeDef* hi2c) :
+  params_(constants::low_mode),
+  sensor1_(hi2c, ADDR::FIRST),
+  sensor2_(hi2c, ADDR::SECOND) {
+    sensor1_.begin();
+    sensor1_.setAlertFunctionMode(true);
+    sensor1_.setLowLimit(params_.low_threshold);
+    sensor1_.setHighLimit(params_.high_threshold);
+
+    sensor2_.begin();
+    sensor2_.setAlertFunctionMode(true);
+    sensor2_.setLowLimit(params_.low_threshold);
+    sensor2_.setHighLimit(params_.high_threshold);
+  }
 
 void OperatingMode::change_mode() {
   switch (params_.mode) {
@@ -20,6 +32,12 @@ void OperatingMode::change_mode() {
     // printf("unknown operating mode type\r\n");
     break;
   }
+
+  sensor1_.setLowLimit(params_.low_threshold);
+  sensor1_.setHighLimit(params_.high_threshold);
+
+  sensor2_.setLowLimit(params_.low_threshold);
+  sensor2_.setHighLimit(params_.high_threshold);
 }
 
 void OperatingMode::blink_leds() const {
@@ -32,14 +50,30 @@ void OperatingMode::blink_leds() const {
 }
 
 void OperatingMode::reset_leds() const {
-    // printf("reset status leds\r\n");
-    HAL_GPIO_WritePin(constants::mode_led1.port, constants::mode_led1.pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(constants::mode_led2.port, constants::mode_led2.pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(constants::mode_led3.port, constants::mode_led3.pin, GPIO_PIN_RESET);
+  // printf("reset status leds\r\n");
+  HAL_GPIO_WritePin(constants::mode_led1.port, constants::mode_led1.pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(constants::mode_led2.port, constants::mode_led2.pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(constants::mode_led3.port, constants::mode_led3.pin, GPIO_PIN_RESET);
 }
 
 OperatingModeParams OperatingMode::current_mode() const {
   return params_;
+}
+
+void OperatingMode::enable_heating() {
+  sensor1_.setLowLimit(params_.low_threshold);
+  sensor1_.setHighLimit(params_.high_threshold);
+
+  sensor2_.setLowLimit(params_.low_threshold);
+  sensor2_.setHighLimit(params_.high_threshold);
+}
+
+void OperatingMode::disable_heating() {
+  sensor1_.setLowLimit(0);
+  sensor1_.setHighLimit(0);
+
+  sensor2_.setLowLimit(0);
+  sensor2_.setHighLimit(0);
 }
 
 ButtonPressType check_button_press(GPIO_TypeDef* port, uint16_t pin, uint32_t time_ms_short, uint32_t time_ms_long) {
