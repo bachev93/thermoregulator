@@ -1,3 +1,4 @@
+/*
 // Peripheral usage
 #include "stm32f0xx_hal.h"
 
@@ -152,3 +153,4 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
     HAL_TIM_PWM_Stop_DMA(&htim3, TIM_CHANNEL_1);
   }
 }
+*/

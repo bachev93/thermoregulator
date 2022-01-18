@@ -2,7 +2,7 @@
 #include <numeric>
 
 #include "auxiliary.h"
-#include "sk6812.h"
+// #include "sk6812.h"
 
 namespace thermoregulator {
 OperatingMode::OperatingMode() :
@@ -89,22 +89,22 @@ void change_addr_led_behaviour(DeviceStatus dev_state, Color color) {
     // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
     // printf("device is working, address LED color depends on battery charging level\r\n");
     // TODO: change color by battery level. now the color is red;
-    led_render();
-    led_set_all_RGB(255, 0, 0);
+    // led_render();
+    // led_set_all_RGB(255, 0, 0);
     break;
   case DeviceStatus::DEVICE_CHARGING:
     set_addr_led_color(Color::Blue);
     // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
     // printf("device is charging, PWM blue address LED\r\n");
-    led_render();
-    led_set_all_RGB(0, 0, 255);
+    // led_render();
+    // led_set_all_RGB(0, 0, 255);
     break;
   case DeviceStatus::DEVICE_CHARGED:
     set_addr_led_color(Color::Blue);
     // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
     // printf("device is charged, blue address LED\r\n");
-    led_render();
-    led_set_all_RGB(0, 0, 255);
+    // led_render();
+    // led_set_all_RGB(0, 0, 255);
     break;
   default:
     set_addr_led_color(color);

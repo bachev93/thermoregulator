@@ -35,11 +35,11 @@ const int working_time = 30;
 const int idle_time = 15;
 
 // blink show status time, in sec
-const int status_time = 5;
+const int status_time = 2;
 
 const OperatingModeParams low_mode = {OperatingModeType::LOW, 38, 40};
-const OperatingModeParams middle_mode = {OperatingModeType::MIDDLE, 40, 45};
-const OperatingModeParams high_mode = {OperatingModeType::HIGH, 45, 50};
+const OperatingModeParams middle_mode = {OperatingModeType::MIDDLE, 39, 41};
+const OperatingModeParams high_mode = {OperatingModeType::HIGH, 40, 42};
 
 const Pin mode_led1 = {GPIOA, GPIO_PIN_7};
 const Pin mode_led2 = {GPIOA, GPIO_PIN_6};

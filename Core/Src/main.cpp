@@ -47,8 +47,6 @@ ADC_HandleTypeDef hadc;
 I2C_HandleTypeDef hi2c1;
 
 TIM_HandleTypeDef htim1;
-TIM_HandleTypeDef htim3;
-DMA_HandleTypeDef hdma_tim3_ch4_up;
 
 /* USER CODE BEGIN PV */
 
@@ -59,8 +57,6 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC_Init(void);
 static void MX_I2C1_Init(void);
-static void MX_DMA_Init(void);
-static void MX_TIM3_Init(void);
 static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
 // void do_main_work(thermoregulator::OperatingMode& mode, thermoregulator::tmp117& thermosensor);
@@ -124,8 +120,6 @@ int main(void)
   MX_GPIO_Init();
   MX_ADC_Init();
   MX_I2C1_Init();
-  MX_DMA_Init();
-  MX_TIM3_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim1);
@@ -138,8 +132,19 @@ int main(void)
   mode.blink_leds();
   HAL_Delay(constants::status_time * 1000);
   mode.reset_leds();
-  // tmp117 thermosensor(&hi2c1, thermoregulator::ADDR::FIRST, mode.current_mode().low_threshold,
-  //                     mode.current_mode().high_threshold);
+
+  tmp117 sensor1(&hi2c1, thermoregulator::ADDR::FIRST);
+  sensor1.begin();
+  sensor1.setAlertFunctionMode(true);
+  sensor1.setLowLimit(45);
+  sensor1.setHighLimit(50);
+
+  tmp117 sensor2(&hi2c1, thermoregulator::ADDR::FIRST);
+  sensor2.begin();
+  sensor2.setAlertFunctionMode(true);
+  sensor2.setLowLimit(45);
+  sensor2.setHighLimit(50);
+
   while (1)
   {
     /* USER CODE END WHILE */
@@ -151,7 +156,7 @@ int main(void)
       auto device_state = thermoregulator::device_status();
       if(last_device_state != device_state) {
         last_device_state = device_state;
-        change_addr_led_behaviour(last_device_state);
+        // change_addr_led_behaviour(last_device_state);
       }
     }
 
@@ -173,9 +178,6 @@ int main(void)
         btn_1st_press = true;
         mode.blink_leds();
       }
-    } else if(button_press_state == ButtonPressType::LONG_PRESS) {
-      // printf("long button press\r\n");
-      poweroff();
     }
 
     if(status_tick >= constants::status_time) {
@@ -187,12 +189,12 @@ int main(void)
     if(adc_tick >= constants::battery_check_time) {
       adc_tick = 0;
 
-      // auto temperature = thermosensor.get_temperature();
-      // printf("The temperature now is %d", temperature);
+      // auto temperature1 = sensor1.readTempC();
+      // auto temperature2 = sensor2.readTempC();
 
       auto bat_voltage = get_battery_voltage(&hadc);
-      auto addr_led_color = get_color_by_battery_level(bat_voltage);
-      change_addr_led_behaviour(last_device_state, addr_led_color);
+      // auto addr_led_color = get_color_by_battery_level(bat_voltage);
+      // change_addr_led_behaviour(last_device_state, addr_led_color);
       // printf("battery voltage: %f\r\n", bat_voltage);
       if(bat_voltage < constants::vbat_low_level) {
         // printf("battery charge level below %f volts\r\n", constants::vbat_low_level);
@@ -316,7 +318,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x20303E5D;
+  hi2c1.Init.Timing = 0x2010091A;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -393,81 +395,6 @@ static void MX_TIM1_Init(void)
 }
 
 /**
-  * @brief TIM3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM3_Init(void)
-{
-
-  /* USER CODE BEGIN TIM3_Init 0 */
-
-  /* USER CODE END TIM3_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
-
-  /* USER CODE BEGIN TIM3_Init 1 */
-
-  /* USER CODE END TIM3_Init 1 */
-  htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 0;
-  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 59;
-  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM3_Init 2 */
-
-  /* USER CODE END TIM3_Init 2 */
-  HAL_TIM_MspPostInit(&htim3);
-
-}
-
-/**
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void)
-{
-
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA1_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA1_Channel2_3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel2_3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
-
-}
-
-/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -479,21 +406,14 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PA0 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  /*Configure GPIO pins : PA0 PA2 PA3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_2|GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PA2 PA3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PA5 PA6 PA7 */
