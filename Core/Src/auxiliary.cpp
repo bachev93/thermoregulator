@@ -1,26 +1,17 @@
-#include <iterator>
-#include <numeric>
-
 #include "auxiliary.h"
 // #include "sk6812.h"
 
 namespace thermoregulator {
 OperatingMode::OperatingMode(I2C_HandleTypeDef* hi2c) :
-  params_(constants::low_mode),
+  params_(constants::disable_mode),
   sensor1_(hi2c, ADDR::FIRST),
-  sensor2_(hi2c, ADDR::SECOND) {
-    sensor1_.begin();
-    sensor1_.setAlertFunctionMode(true);
-    sensor1_.setLowLimit(params_.low_threshold);
-    sensor1_.setHighLimit(params_.high_threshold);
+  sensor2_(hi2c, ADDR::SECOND) {}
 
-    sensor2_.begin();
-    sensor2_.setAlertFunctionMode(true);
-    sensor2_.setLowLimit(params_.low_threshold);
-    sensor2_.setHighLimit(params_.high_threshold);
-  }
+OperatingMode::operator bool() {
+  return sensor1_.check() && sensor2_.check();
+}
 
-void OperatingMode::change_mode() {
+bool OperatingMode::change_mode() {
   switch (params_.mode) {
   case OperatingModeType::LOW:
     params_ = constants::middle_mode; break;
@@ -29,15 +20,14 @@ void OperatingMode::change_mode() {
   case OperatingModeType::HIGH:
     params_ = constants::low_mode; break;
   default:
-    // printf("unknown operating mode type\r\n");
-    break;
+    if (!sensor1_.enableAlertFunctionMode() || !sensor2_.enableAlertFunctionMode()) {
+      return false;
+    }
+    params_ = constants::low_mode;
   }
 
-  sensor1_.setLowLimit(params_.low_threshold);
-  sensor1_.setHighLimit(params_.high_threshold);
-
-  sensor2_.setLowLimit(params_.low_threshold);
-  sensor2_.setHighLimit(params_.high_threshold);
+  return sensor1_.setLowLimit(params_.low_threshold) && sensor1_.setHighLimit(params_.high_threshold) &&
+         sensor2_.setLowLimit(params_.low_threshold) && sensor2_.setHighLimit(params_.high_threshold);
 }
 
 void OperatingMode::blink_leds() const {
@@ -60,20 +50,14 @@ OperatingModeParams OperatingMode::current_mode() const {
   return params_;
 }
 
-void OperatingMode::enable_heating() {
-  sensor1_.setLowLimit(params_.low_threshold);
-  sensor1_.setHighLimit(params_.high_threshold);
-
-  sensor2_.setLowLimit(params_.low_threshold);
-  sensor2_.setHighLimit(params_.high_threshold);
+bool OperatingMode::enable_heating() {
+  return sensor1_.setLowLimit(params_.low_threshold) && sensor1_.setHighLimit(params_.high_threshold) &&
+         sensor2_.setLowLimit(params_.low_threshold) && sensor2_.setHighLimit(params_.high_threshold);
 }
 
-void OperatingMode::disable_heating() {
-  sensor1_.setLowLimit(0);
-  sensor1_.setHighLimit(0);
-
-  sensor2_.setLowLimit(0);
-  sensor2_.setHighLimit(0);
+bool OperatingMode::disable_heating() {
+  return sensor1_.setLowLimit(0.) && sensor1_.setHighLimit(0.) &&
+         sensor2_.setLowLimit(0.) && sensor2_.setHighLimit(0.);
 }
 
 ButtonPressType check_button_press(GPIO_TypeDef* port, uint16_t pin, uint32_t time_ms_short, uint32_t time_ms_long) {
@@ -116,53 +100,43 @@ DeviceStatus device_status() {
   return res;
 }
 
-void change_addr_led_behaviour(DeviceStatus dev_state, Color color) {
+void change_addr_led_behaviour(DeviceStatus dev_state) {
   switch (dev_state) {
   case DeviceStatus::DEVICE_WORKING:
-    set_addr_led_color(color);
-    // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
     // printf("device is working, address LED color depends on battery charging level\r\n");
-    // TODO: change color by battery level. now the color is red;
-    // led_render();
-    // led_set_all_RGB(255, 0, 0);
+    // в режиме работы будет повторный вызов изменения состояния по напряжению
     break;
   case DeviceStatus::DEVICE_CHARGING:
-    set_addr_led_color(Color::Blue);
-    // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
     // printf("device is charging, PWM blue address LED\r\n");
-    // led_render();
-    // led_set_all_RGB(0, 0, 255);
+    set_addr_led_color(blue);
     break;
   case DeviceStatus::DEVICE_CHARGED:
-    set_addr_led_color(Color::Blue);
-    // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
     // printf("device is charged, blue address LED\r\n");
-    // led_render();
-    // led_set_all_RGB(0, 0, 255);
+    set_addr_led_color(green);
     break;
   default:
-    set_addr_led_color(color);
-    // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
     // printf("unknown charging status\r\n");
     break;
   }
 }
 
+void change_addr_led_behaviour(float voltage) {
+  set_addr_led_color(volt2color(voltage));
+}
+
 float get_battery_voltage(ADC_HandleTypeDef* hadc) {
-  // TODO: sample_size should become compile-time constant
   static const auto samples_size = 10ul;
-  uint32_t samples[samples_size];
+  uint32_t accumulator = 0u;
 
   HAL_ADC_Start(hadc);
   for(size_t i = 0ul; i < samples_size; ++i) {
     HAL_ADC_PollForConversion(hadc, 1);
-    samples[i] = HAL_ADC_GetValue(hadc);
+    accumulator += HAL_ADC_GetValue(hadc);
   }
   HAL_ADC_Stop(hadc);
 
-  auto average = std::accumulate(std::begin(samples), std::end(samples), 0u) / samples_size;
-  // TODO: change 4095 to constant 12 bit integer max val
-  return constants::vbat / 4095 * average;
+  auto average = accumulator / samples_size;
+  return constants::vbat_lbs * average;
 }
 
 void poweroff() {
@@ -176,12 +150,23 @@ void poweroff() {
   // HAL_GPIO_Init(constants::btn.port, &GPIO_InitStruct);
 }
 
-Color get_color_by_battery_level(float bat_level) {
-  // TODO: add here some maths to calculate color
-  return Color::Green;
+Color volt2color(float bat_level) {
+  static const auto range = constants::vbat - constants::vbat_low_level;
+  static const auto delta = range / 4.f;
+
+  if (bat_level >= constants::vbat - delta) {
+    return green;
+  } else if (bat_level >= constants::vbat - 2 * delta) {
+    return yellow;
+  } else if (bat_level >= constants::vbat - 3 * delta) {
+    return orange;
+  } else {
+    return red;
+  }
 }
 
-void set_addr_led_color(Color) {
-  // TODO: For Max
+void set_addr_led_color(Color c) {
+  // set_RGB(c.r, c.g, c.b);
+  // led_render();
 }
 }

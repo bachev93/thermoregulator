@@ -33,6 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define LEDS_OFF 0
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,7 +65,7 @@ static void MX_TIM1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 namespace {
-uint8_t adc_tick = 0;
+uint8_t adc_tick = thermoregulator::constants::battery_check_time;
 
 thermoregulator::DeviceStatus last_device_state = thermoregulator::DeviceStatus::UNKNOWN;
 bool check_device_state = true;
@@ -127,38 +128,58 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   OperatingMode mode(&hi2c1);
+  if (!mode || !mode.change_mode()) {
+    // signal tmp117 trouble
+    poweroff();
+  }
   mode.blink_leds();
-  HAL_Delay(constants::status_time * 1000);
-  mode.reset_leds();
-  while (1)
-  {
+  HAL_Delay(constants::status_time * 1000u);
+  if (LEDS_OFF) { mode.reset_leds(); }
+  while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    if(check_device_state) {
+    if (check_device_state) {
       check_device_state = false;
 
-      auto device_state = thermoregulator::device_status();
-      if(last_device_state != device_state) {
+      auto device_state = device_status();
+      if (last_device_state != device_state) {
         last_device_state = device_state;
-        // change_addr_led_behaviour(last_device_state);
+        change_addr_led_behaviour(last_device_state);
       }
     }
 
-    if(last_device_state == thermoregulator::DeviceStatus::DEVICE_WORKING) {
-      if(is_heating) {
-        if(working_tick >= thermoregulator::constants::working_time) {
+    if (last_device_state == DeviceStatus::DEVICE_WORKING) {
+      if (is_heating) {
+        if (working_tick >= constants::working_time) {
           // set tmp117 limits to 0 degrees
-          mode.disable_heating();
+          if (!mode.disable_heating()) {
+            // signal tmp117 trouble
+            poweroff();
+          }
           working_tick = 0;
           is_heating = false;
         }
       } else {
-        if(working_tick >= thermoregulator::constants::idle_time) {
+        if (working_tick >= constants::idle_time) {
           // set tmp117 limits to operating mode
-          mode.enable_heating();
+          if (!mode.enable_heating()) {
+            // signal tmp117 trouble
+            poweroff();
+          }
           working_tick = 0;
           is_heating = true;
+        }
+      }
+
+      if(adc_tick >= constants::battery_check_time) {
+        adc_tick = 0;
+        auto bat_voltage = get_battery_voltage(&hadc);
+        change_addr_led_behaviour(bat_voltage);
+        // printf("battery voltage: %f\r\n", bat_voltage);
+        if(bat_voltage < constants::vbat_low_level) {
+          // printf("battery charge level below %f volts\r\n", constants::vbat_low_level);
+          poweroff();
         }
       }
     } else {
@@ -166,10 +187,13 @@ int main(void)
     }
 
     auto button_press_state = check_button_press(constants::btn.port, constants::btn.pin, 50, 3000);
-    if(button_press_state == ButtonPressType::SHORT_PRESS) {
+    if (button_press_state == ButtonPressType::SHORT_PRESS) {
       // printf("short button press\r\n");
-      if(btn_1st_press) {
-        mode.change_mode();
+      if (btn_1st_press) {
+        if (!mode.change_mode()) {
+          // signal tmp117 trouble
+          poweroff();
+        }
         mode.blink_leds();
         status_tick = 0;
       } else {
@@ -181,19 +205,7 @@ int main(void)
     if(status_tick >= constants::status_time) {
       btn_1st_press = false;
       status_tick = 0;
-      mode.reset_leds();
-    }
-
-    if(adc_tick >= constants::battery_check_time) {
-      adc_tick = 0;
-      auto bat_voltage = get_battery_voltage(&hadc);
-      // auto addr_led_color = get_color_by_battery_level(bat_voltage);
-      // change_addr_led_behaviour(last_device_state, addr_led_color);
-      // printf("battery voltage: %f\r\n", bat_voltage);
-      if(bat_voltage < constants::vbat_low_level) {
-        // printf("battery charge level below %f volts\r\n", constants::vbat_low_level);
-        poweroff();
-      }
+      if (LEDS_OFF) { mode.reset_leds(); }
     }
   }
   /* USER CODE END 3 */
