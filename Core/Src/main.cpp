@@ -75,11 +75,14 @@ uint16_t working_tick = 0;
 
 bool btn_1st_press = false;
 uint8_t status_tick = 0;
+
+uint8_t wait_tick = 0;
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   ++adc_tick;
   ++working_tick;
+  ++wait_tick;
 
   check_device_state = true;
 
@@ -93,8 +96,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   * @brief  The application entry point.
   * @retval int
   */
-int main(void)
-{
+int main(void) {
   /* USER CODE BEGIN 1 */
   using namespace thermoregulator;
   /* USER CODE END 1 */
@@ -128,10 +130,18 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   OperatingMode mode(&hi2c1);
-  if (!mode || !mode.change_mode()) {
-    // signal tmp117 trouble
-    poweroff();
+  while (!mode) {
+    change_addr_led_behaviour(last_device_state);
+    HAL_Delay(1000);
+    reset_addr_led();
+    HAL_Delay(1000);
+
+    if (wait_tick >= constants::wait_for_tmp117) {
+      poweroff();
+    }
   }
+
+  mode.change_mode();
   mode.blink_leds();
   HAL_Delay(constants::status_time * 1000u);
   if (LEDS_OFF) { mode.reset_leds(); }
@@ -153,33 +163,16 @@ int main(void)
       if (is_heating) {
         if (working_tick >= constants::working_time) {
           // set tmp117 limits to 0 degrees
-          if (!mode.disable_heating()) {
-            // signal tmp117 trouble
-            poweroff();
-          }
+          mode.disable_heating();
           working_tick = 0;
           is_heating = false;
         }
       } else {
         if (working_tick >= constants::idle_time) {
           // set tmp117 limits to operating mode
-          if (!mode.enable_heating()) {
-            // signal tmp117 trouble
-            poweroff();
-          }
+          mode.enable_heating();
           working_tick = 0;
           is_heating = true;
-        }
-      }
-
-      if(adc_tick >= constants::battery_check_time) {
-        adc_tick = 0;
-        auto bat_voltage = get_battery_voltage(&hadc);
-        change_addr_led_behaviour(bat_voltage);
-        // printf("battery voltage: %f\r\n", bat_voltage);
-        if(bat_voltage < constants::vbat_low_level) {
-          // printf("battery charge level below %f volts\r\n", constants::vbat_low_level);
-          poweroff();
         }
       }
     } else {
@@ -190,10 +183,7 @@ int main(void)
     if (button_press_state == ButtonPressType::SHORT_PRESS) {
       // printf("short button press\r\n");
       if (btn_1st_press) {
-        if (!mode.change_mode()) {
-          // signal tmp117 trouble
-          poweroff();
-        }
+        mode.change_mode();
         mode.blink_leds();
         status_tick = 0;
       } else {
@@ -206,6 +196,17 @@ int main(void)
       btn_1st_press = false;
       status_tick = 0;
       if (LEDS_OFF) { mode.reset_leds(); }
+    }
+
+    if (adc_tick >= constants::battery_check_time) {
+      adc_tick = 0;
+      auto bat_voltage = get_battery_voltage(&hadc);
+      change_addr_led_behaviour(bat_voltage);
+      // printf("battery voltage: %f\r\n", bat_voltage);
+      if (bat_voltage < constants::vbat_low_level) {
+        // printf("battery charge level below %f volts\r\n", constants::vbat_low_level);
+        poweroff();
+      }
     }
   }
   /* USER CODE END 3 */

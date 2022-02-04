@@ -12,6 +12,7 @@ static const auto TMP117_RESOLUTION = .0078125f;    // Resolution of the device,
 
 // Address of the registers. This can be found on page 23 of the datasheet
 enum class TMP117_Register : uint8_t {
+  TMP117_TEMP_RESULT = 0X00,
   TMP117_CONFIGURATION = 0x01,
   TMP117_T_HIGH_LIMIT = 0X02,
   TMP117_T_LOW_LIMIT = 0X03,
@@ -22,15 +23,14 @@ class tmp117 {
 public:
   explicit tmp117(I2C_HandleTypeDef* hi2c, ADDR addr);
   bool check();
-  bool setLowLimit(float lowLimit);
-  bool setHighLimit(float highLimit);
-  bool enableAlertFunctionMode();
+  void setLowLimit(float lowLimit);
+  void setHighLimit(float highLimit);
+  void enableAlertFunctionMode();
+  float readTempC();
 
 private:
-  static const unsigned max_try_cnt = 5;
   I2C_HandleTypeDef* hi2c_;
   ADDR addr_;
-  unsigned try_count = 0;
 
   int16_t readRegister(TMP117_Register reg);
   HAL_StatusTypeDef writeRegister(TMP117_Register reg, uint16_t data);

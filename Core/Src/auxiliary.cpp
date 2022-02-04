@@ -11,7 +11,7 @@ OperatingMode::operator bool() {
   return sensor1_.check() && sensor2_.check();
 }
 
-bool OperatingMode::change_mode() {
+void OperatingMode::change_mode() {
   switch (params_.mode) {
   case OperatingModeType::LOW:
     params_ = constants::middle_mode; break;
@@ -20,23 +20,21 @@ bool OperatingMode::change_mode() {
   case OperatingModeType::HIGH:
     params_ = constants::low_mode; break;
   default:
-    if (!sensor1_.enableAlertFunctionMode() || !sensor2_.enableAlertFunctionMode()) {
-      return false;
-    }
+    sensor1_.enableAlertFunctionMode();
+    sensor2_.enableAlertFunctionMode();
     params_ = constants::low_mode;
   }
-
-  return sensor1_.setLowLimit(params_.low_threshold) && sensor1_.setHighLimit(params_.high_threshold) &&
-         sensor2_.setLowLimit(params_.low_threshold) && sensor2_.setHighLimit(params_.high_threshold);
+  sensor1_.setLowLimit(params_.low_threshold);
+  sensor1_.setHighLimit(params_.high_threshold);
+  sensor2_.setLowLimit(params_.low_threshold);
+  sensor2_.setHighLimit(params_.high_threshold);
 }
 
 void OperatingMode::blink_leds() const {
   namespace c = thermoregulator::constants;
   HAL_GPIO_WritePin(c::mode_led1.port, c::mode_led1.pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(c::mode_led2.port, c::mode_led2.pin,
-                    GPIO_PinState(params_.mode > OperatingModeType::LOW));
-  HAL_GPIO_WritePin(c::mode_led3.port, c::mode_led3.pin,
-                    GPIO_PinState(params_.mode > OperatingModeType::MIDDLE));
+  HAL_GPIO_WritePin(c::mode_led2.port, c::mode_led2.pin, GPIO_PinState(params_.mode > OperatingModeType::LOW));
+  HAL_GPIO_WritePin(c::mode_led3.port, c::mode_led3.pin, GPIO_PinState(params_.mode > OperatingModeType::MIDDLE));
 }
 
 void OperatingMode::reset_leds() const {
@@ -50,14 +48,18 @@ OperatingModeParams OperatingMode::current_mode() const {
   return params_;
 }
 
-bool OperatingMode::enable_heating() {
-  return sensor1_.setLowLimit(params_.low_threshold) && sensor1_.setHighLimit(params_.high_threshold) &&
-         sensor2_.setLowLimit(params_.low_threshold) && sensor2_.setHighLimit(params_.high_threshold);
+void OperatingMode::enable_heating() {
+  sensor1_.setLowLimit(params_.low_threshold);
+  sensor1_.setHighLimit(params_.high_threshold);
+  sensor2_.setLowLimit(params_.low_threshold);
+  sensor2_.setHighLimit(params_.high_threshold);
 }
 
-bool OperatingMode::disable_heating() {
-  return sensor1_.setLowLimit(0.) && sensor1_.setHighLimit(0.) &&
-         sensor2_.setLowLimit(0.) && sensor2_.setHighLimit(0.);
+void OperatingMode::disable_heating() {
+  sensor1_.setLowLimit(0.);
+  sensor1_.setHighLimit(0.);
+  sensor2_.setLowLimit(0.);
+  sensor2_.setHighLimit(0.);
 }
 
 ButtonPressType check_button_press(GPIO_TypeDef* port, uint16_t pin, uint32_t time_ms_short, uint32_t time_ms_long) {
@@ -115,13 +117,17 @@ void change_addr_led_behaviour(DeviceStatus dev_state) {
     set_addr_led_color(green);
     break;
   default:
-    // printf("unknown charging status\r\n");
+    set_addr_led_color(red);
     break;
   }
 }
 
 void change_addr_led_behaviour(float voltage) {
   set_addr_led_color(volt2color(voltage));
+}
+
+void reset_addr_led() {
+  set_addr_led_color(off);
 }
 
 float get_battery_voltage(ADC_HandleTypeDef* hadc) {

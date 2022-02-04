@@ -26,26 +26,11 @@ bool tmp117::check() {
  * 	This function sets the alert function mode to either "alert" or
 	"therm" mode. This can be found on page 25 of the datasheet.
  */
-bool tmp117::enableAlertFunctionMode() {
+void tmp117::enableAlertFunctionMode() {
   auto alert_func_mode = readRegister(TMP117_Register::TMP117_CONFIGURATION);
-  if (alert_func_mode < 0) {
-    return false;
-  }
   alert_func_mode |= 1 << 4;  //set register bit to be 1
 
-  switch(writeRegister(TMP117_Register::TMP117_CONFIGURATION, alert_func_mode)) {
-  case HAL_ERROR: return false;
-  case HAL_BUSY:
-    HAL_Delay(1000);
-    if (try_count++ < max_try_cnt) {
-      return enableAlertFunctionMode();
-    } else {
-      return false;
-    }
-  default: break;
-  }
-  try_count = 0;
-  return true;
+  writeRegister(TMP117_Register::TMP117_CONFIGURATION, alert_func_mode);
 }
 
 /**
@@ -56,21 +41,9 @@ bool tmp117::enableAlertFunctionMode() {
 	The values are signed integers since they can be negative.
  * @param lowLimit 
  */
-bool tmp117::setLowLimit(float lowLimit) {
+void tmp117::setLowLimit(float lowLimit) {
   int16_t final_limit = lowLimit / TMP117_RESOLUTION;
-  switch(writeRegister(TMP117_Register::TMP117_T_LOW_LIMIT, final_limit)) {
-  case HAL_ERROR: return false;
-  case HAL_BUSY:
-    HAL_Delay(1000);
-    if (try_count++ < max_try_cnt) {
-      return setLowLimit(lowLimit);
-    } else {
-      return false;
-    }
-  default: break;
-  }
-  try_count = 0;
-  return true;
+  writeRegister(TMP117_Register::TMP117_T_LOW_LIMIT, final_limit);
 }
 
 /**
@@ -81,21 +54,9 @@ bool tmp117::setLowLimit(float lowLimit) {
 	The values are signed integers since they can be negative.
  * @param highLimit 
  */
-bool tmp117::setHighLimit(float highLimit) {
+void tmp117::setHighLimit(float highLimit) {
   int16_t final_limit = highLimit / TMP117_RESOLUTION;
-  switch(writeRegister(TMP117_Register::TMP117_T_HIGH_LIMIT, final_limit)) {
-  case HAL_ERROR: return false;
-  case HAL_BUSY:
-    HAL_Delay(1000);
-    if (try_count++ < max_try_cnt) {
-      return setHighLimit(highLimit);
-    } else {
-      return false;
-    }
-  default: break;
-  }
-  try_count = 0;
-  return true;
+  writeRegister(TMP117_Register::TMP117_T_HIGH_LIMIT, final_limit);
 }
 
 /**
@@ -132,5 +93,20 @@ int16_t tmp117::readRegister(TMP117_Register reg) {
     }
   }
   return -1;
+}
+
+/**
+ * @brief
+ * This function reads the temperature reading from the sensor
+   and returns the value in degrees celsius.
+
+   NOTE: The data type of digitalTemp is a signed integer, meaning that the
+   value of the binary number being read will be negative if the MSB is 1,
+   and positive if the bit is 0.
+  * @return float
+  */
+float tmp117::readTempC() {
+  int16_t digital_tempC = readRegister(TMP117_Register::TMP117_TEMP_RESULT);
+  return digital_tempC * TMP117_RESOLUTION;
 }
 }

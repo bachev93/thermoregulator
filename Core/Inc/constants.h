@@ -19,24 +19,26 @@ struct Pin {
 namespace constants {
 // battery voltage max value, in volts
 const float vbat = 3.3f;
-const float vbat_lbs = vbat / (1 << 12 /* adc bits */);
+const float vbat_lbs = vbat / (1 << 12 /* adc resolution */);
 
 // battery voltage level for powering off the device, in volts
 const float vbat_low_level = 1.5f;
 
 // battery charging level check time, in sec
-const int battery_check_time = 10;
+const uint8_t battery_check_time = 10;
 
 // working time, in sec
 // const int working_time = 1200;
-const int working_time = 30;
+const uint16_t working_time = 30;
 
 // idle time, in sec
 // const int idle_time = 300;
-const int idle_time = 15;
+const uint16_t idle_time = 15;
 
 // blink show status time, in sec
-const auto status_time = 2u;
+const uint8_t status_time = 2;
+
+const uint8_t wait_for_tmp117 = 120;
 
 const OperatingModeParams low_mode = {OperatingModeType::LOW, 38, 40};
 const OperatingModeParams middle_mode = {OperatingModeType::MIDDLE, 39, 41};

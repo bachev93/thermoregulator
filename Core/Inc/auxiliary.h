@@ -13,12 +13,12 @@ namespace thermoregulator {
 class OperatingMode {
   public:
     explicit OperatingMode(I2C_HandleTypeDef* hi2c);
-    bool change_mode();
+    void change_mode();
     void blink_leds() const;
     void reset_leds() const;
     OperatingModeParams current_mode() const;
-    bool enable_heating();
-    bool disable_heating();
+    void enable_heating();
+    void disable_heating();
     operator bool();
   private:
     OperatingModeParams params_;
@@ -33,6 +33,7 @@ static const Color orange = {255, 153, 51};
 static const Color yellow = {255, 255, 49};
 static const Color green = {0, 255, 0};
 static const Color blue = {0, 0, 255};
+static const Color off = {0, 0, 0};
 
 Color volt2color(float bat_level);
 void set_addr_led_color(Color);
@@ -45,6 +46,7 @@ enum class DeviceStatus {DEVICE_WORKING, DEVICE_CHARGING, DEVICE_CHARGED, UNKNOW
 DeviceStatus device_status();
 void change_addr_led_behaviour(DeviceStatus dev_state);
 void change_addr_led_behaviour(float);
+void reset_addr_led();
 
 float get_battery_voltage(ADC_HandleTypeDef* hadc);
 void poweroff();
