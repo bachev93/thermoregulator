@@ -19,14 +19,23 @@ class OperatingMode {
     OperatingModeParams current_mode() const;
     void enable_heating();
     void disable_heating();
+    operator bool();
   private:
     OperatingModeParams params_;
     tmp117 sensor1_;
     tmp117 sensor2_;
 };
 
-enum class Color {Red, Green, Blue, Orange, Yellow};
-Color get_color_by_battery_level(float bat_level);
+struct Color { uint8_t r, g, b; };
+
+static const Color red = {255, 0, 0};
+static const Color orange = {255, 153, 51};
+static const Color yellow = {255, 255, 49};
+static const Color green = {0, 255, 0};
+static const Color blue = {0, 0, 255};
+static const Color off = {0, 0, 0};
+
+Color volt2color(float bat_level);
 void set_addr_led_color(Color);
 
 enum class ButtonPressType {SHORT_PRESS, LONG_PRESS, NO_PRESS};
@@ -35,7 +44,9 @@ ButtonPressType check_button_press(GPIO_TypeDef* port, uint16_t pin,
 
 enum class DeviceStatus {DEVICE_WORKING, DEVICE_CHARGING, DEVICE_CHARGED, UNKNOWN};
 DeviceStatus device_status();
-void change_addr_led_behaviour(DeviceStatus dev_state, Color = Color::Red);
+void change_addr_led_behaviour(DeviceStatus dev_state);
+void change_addr_led_behaviour(float);
+void reset_addr_led();
 
 float get_battery_voltage(ADC_HandleTypeDef* hadc);
 void poweroff();
