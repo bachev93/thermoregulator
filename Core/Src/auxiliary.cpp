@@ -1,5 +1,5 @@
 #include "auxiliary.h"
-// #include "sk6812.h"
+#include "sk6812.h"
 
 namespace thermoregulator {
 OperatingMode::OperatingMode(I2C_HandleTypeDef* hi2c) :
@@ -172,7 +172,7 @@ Color volt2color(float bat_level) {
 }
 
 void set_addr_led_color(Color c) {
-  // set_RGB(c.r, c.g, c.b);
-  // led_render();
+  led_set_RGB(c.r, c.g, c.b);
+  led_render();
 }
 }
