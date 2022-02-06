@@ -17,12 +17,13 @@ struct Pin {
 };
 
 namespace constants {
-// battery voltage max value, in volts
-const float vbat = 3.3f;
-const float vbat_lbs = vbat / (1 << 12 /* adc resolution */);
+// ADC resolution, VCC / 2^12
+const float adc_res = 3.3 / (1 << 12);
 
-// battery voltage level for powering off the device, in volts
-const float vbat_low_level = 1.5f;
+// ADC pin voltage max value, in volts
+const float v_adc = 2.1f;
+// ADC pin voltage level for powering off the device, in volts
+const float v_adc_low_level = 1.5f;
 
 // battery charging level check time, in sec
 const uint8_t battery_check_time = 10;

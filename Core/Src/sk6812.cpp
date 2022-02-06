@@ -8,14 +8,15 @@ extern DMA_HandleTypeDef hdma_tim3_ch4_up;
 #define PWM_LO (14)
 
 // LED parameters
-#define NUM_BPP (3) // SK6812 MINI
-#define NUM_PIXELS (1)
-#define NUM_BYTES (NUM_BPP * NUM_PIXELS)
-#define DATA_LEN (NUM_BPP * 8)
+#define NUM_BPP (3) // SK6812 MINI, 3 colors
+#define LEDS_COUNT (2)
+// #define NUM_BYTES (NUM_BPP * LEDS_COUNT)
+#define DATA_LEN (NUM_BPP * 8 * LEDS_COUNT)  // 8 bytes by one color
 #define RESET_LEN (72)
 
+namespace thermoregulator {
 // LED color buffer
-uint8_t rgb_arr[NUM_BYTES] = {0};
+uint8_t rgb_arr[NUM_BPP] = {0};
 
 // LED write buffer
 #define WR_BUF_LEN (DATA_LEN + RESET_LEN)
@@ -38,9 +39,14 @@ void led_render() {
   }
 
   for(uint_fast8_t i = 0; i < 8; ++i) {
+    // first LED
     wr_buf[i     ] = PWM_LO << (((rgb_arr[0] << i) & 0x80) > 0);
     wr_buf[i +  8] = PWM_LO << (((rgb_arr[1] << i) & 0x80) > 0);
     wr_buf[i + 16] = PWM_LO << (((rgb_arr[2] << i) & 0x80) > 0);
+    // second LED, same color
+    wr_buf[i + 24] = PWM_LO << (((rgb_arr[0] << i) & 0x80) > 0);
+    wr_buf[i + 32] = PWM_LO << (((rgb_arr[1] << i) & 0x80) > 0);
+    wr_buf[i + 40] = PWM_LO << (((rgb_arr[2] << i) & 0x80) > 0);
   }
 
   HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_4, (uint32_t *)wr_buf, WR_BUF_LEN);
@@ -50,4 +56,5 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
   for(uint8_t i = 0; i < WR_BUF_LEN; ++i) wr_buf[i] = 0;
   HAL_TIM_PWM_Stop_DMA(&htim3, TIM_CHANNEL_4);
 
+}
 }

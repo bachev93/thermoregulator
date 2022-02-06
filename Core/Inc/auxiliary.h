@@ -30,7 +30,7 @@ struct Color { uint8_t r, g, b; };
 
 static const Color red = {255, 0, 0};
 static const Color orange = {255, 153, 51};
-static const Color yellow = {255, 255, 49};
+static const Color yellow = {255, 255, 0};
 static const Color green = {0, 255, 0};
 static const Color blue = {0, 0, 255};
 static const Color off = {0, 0, 0};

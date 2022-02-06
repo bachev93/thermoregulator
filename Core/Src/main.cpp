@@ -150,20 +150,24 @@ int main(void)
 
   mode.change_mode();
   mode.blink_leds();
-  HAL_Delay(constants::status_time * 1000u);
-  if (LEDS_OFF) { mode.reset_leds(); }
+  if (LEDS_OFF) {
+    HAL_Delay(constants::status_time * 1000u);
+    mode.reset_leds();
+  }
+
   while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
     if (check_device_state) {
       check_device_state = false;
-
       auto device_state = device_status();
-      if (last_device_state != device_state) {
-        last_device_state = device_state;
-        change_addr_led_behaviour(last_device_state);
-      }
+      last_device_state = device_state;
+      change_addr_led_behaviour(last_device_state);
+      // if (last_device_state != device_state) {
+      //   last_device_state = device_state;
+      //   change_addr_led_behaviour(last_device_state);
+      // }
     }
 
     if (last_device_state == DeviceStatus::DEVICE_WORKING) {
@@ -188,7 +192,6 @@ int main(void)
 
     auto button_press_state = check_button_press(constants::btn.port, constants::btn.pin, 50, 3000);
     if (button_press_state == ButtonPressType::SHORT_PRESS) {
-      // printf("short button press\r\n");
       if (btn_1st_press) {
         mode.change_mode();
         mode.blink_leds();
@@ -209,9 +212,8 @@ int main(void)
       adc_tick = 0;
       auto bat_voltage = get_battery_voltage(&hadc);
       change_addr_led_behaviour(bat_voltage);
-      // printf("battery voltage: %f\r\n", bat_voltage);
-      if (bat_voltage < constants::vbat_low_level) {
-        // printf("battery charge level below %f volts\r\n", constants::vbat_low_level);
+      if (bat_voltage < constants::v_adc_low_level) {
+        // printf("battery charge level below %f volts\r\n", constants::v_adc_low_level);
         poweroff();
       }
     }

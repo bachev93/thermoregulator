@@ -105,16 +105,16 @@ DeviceStatus device_status() {
 void change_addr_led_behaviour(DeviceStatus dev_state) {
   switch (dev_state) {
   case DeviceStatus::DEVICE_WORKING:
-    // printf("device is working, address LED color depends on battery charging level\r\n");
     // в режиме работы будет повторный вызов изменения состояния по напряжению
     break;
   case DeviceStatus::DEVICE_CHARGING:
-    // printf("device is charging, PWM blue address LED\r\n");
     set_addr_led_color(blue);
+    HAL_Delay(1000);
+    reset_addr_led();
+    HAL_Delay(1000);
     break;
   case DeviceStatus::DEVICE_CHARGED:
-    // printf("device is charged, blue address LED\r\n");
-    set_addr_led_color(green);
+    set_addr_led_color(blue);
     break;
   default:
     set_addr_led_color(red);
@@ -124,6 +124,7 @@ void change_addr_led_behaviour(DeviceStatus dev_state) {
 
 void change_addr_led_behaviour(float voltage) {
   set_addr_led_color(volt2color(voltage));
+  // set_addr_led_color(yellow);
 }
 
 void reset_addr_led() {
@@ -142,7 +143,7 @@ float get_battery_voltage(ADC_HandleTypeDef* hadc) {
   HAL_ADC_Stop(hadc);
 
   auto average = accumulator / samples_size;
-  return constants::vbat_lbs * average;
+  return constants::adc_res * average;
 }
 
 void poweroff() {
@@ -157,14 +158,14 @@ void poweroff() {
 }
 
 Color volt2color(float bat_level) {
-  static const auto range = constants::vbat - constants::vbat_low_level;
+  static const auto range = constants::v_adc - constants::v_adc_low_level;
   static const auto delta = range / 4.f;
 
-  if (bat_level >= constants::vbat - delta) {
+  if (bat_level >= constants::v_adc - delta) {
     return green;
-  } else if (bat_level >= constants::vbat - 2 * delta) {
+  } else if (bat_level >= constants::v_adc - 2 * delta) {
     return yellow;
-  } else if (bat_level >= constants::vbat - 3 * delta) {
+  } else if (bat_level >= constants::v_adc - 3 * delta) {
     return orange;
   } else {
     return red;
