@@ -16,6 +16,14 @@ struct Pin {
   uint16_t pin;
 };
 
+struct Color {
+  explicit Color(uint8_t red, uint8_t green, uint8_t blue, uint8_t brightness = 20) :
+  r(red / brightness),
+  g(green / brightness),
+  b(blue / brightness) {}
+  uint8_t r, g, b;
+};
+
 namespace constants {
 // ADC resolution, VCC / 2^12
 const float adc_res = 3.3 / (1 << 12);
@@ -41,7 +49,7 @@ const uint8_t status_time = 2;
 
 // I2C response time. in sec
 // const uint8_t wait_for_tmp117 = 120;
-const uint8_t wait_for_tmp117 = 30;
+const uint8_t wait_for_tmp117 = 15;
 
 const OperatingModeParams low_mode = {OperatingModeType::LOW, 38, 40};
 const OperatingModeParams middle_mode = {OperatingModeType::MIDDLE, 39, 41};
@@ -55,6 +63,13 @@ const Pin charge_state_pin1 = {GPIOA, GPIO_PIN_2};
 const Pin charge_state_pin2 = {GPIOA, GPIO_PIN_3};
 
 const auto i2c_timeout_ms = 1000u;
+
+const Color red(255, 0, 0);
+const Color green(0, 255, 0);
+const Color blue(0, 0, 255);
+const Color orange(255, 153, 51);
+const Color yellow(255, 255, 0);
+// const Color off = {0, 0, 0};
 }
 }
 

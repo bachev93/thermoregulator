@@ -35,6 +35,10 @@ void OperatingMode::change_mode(OperatingModeType mode_type) {
   blink_leds();
 }
 
+OperatingModeParams OperatingMode::current_mode() const {
+  return params_;
+}
+
 void OperatingMode::blink_leds() const {
   namespace c = thermoregulator::constants;
   HAL_GPIO_WritePin(c::mode_led1.port, c::mode_led1.pin, GPIO_PIN_SET);
@@ -46,13 +50,6 @@ void OperatingMode::set_alert_function_mode() {
   sensor1_.enableAlertFunctionMode();
   sensor2_.enableAlertFunctionMode();
 }
-
-// void OperatingMode::reset_leds() const {
-//   // printf("reset status leds\r\n");
-//   HAL_GPIO_WritePin(constants::mode_led1.port, constants::mode_led1.pin, GPIO_PIN_RESET);
-//   HAL_GPIO_WritePin(constants::mode_led2.port, constants::mode_led2.pin, GPIO_PIN_RESET);
-//   HAL_GPIO_WritePin(constants::mode_led3.port, constants::mode_led3.pin, GPIO_PIN_RESET);
-// }
 
 void OperatingMode::enable_heating() {
   sensor1_.setLowLimit(params_.low_threshold);
@@ -115,35 +112,35 @@ void change_addr_led_behaviour(DeviceStatus dev_state) {
     break;
   case DeviceStatus::DEVICE_CHARGING:
     // PWM blue color
-    for(int i = 0; i < blue.b; ++i) {
+    for(int i = 0; i < constants::blue.b; ++i) {
       led_set_RGB(0, 0, i);
       led_render();
-      HAL_Delay(10);
+      HAL_Delay(70);
     }
-    for(int i = blue.b; i >= 0; --i) {
+    for(int i = constants::blue.b; i >= 0; --i) {
       led_set_RGB(0, 0, i);
       led_render();
-      HAL_Delay(10);
+      HAL_Delay(70);
     }
     break;
   case DeviceStatus::DEVICE_CHARGED:
-    set_addr_led_color(blue);
+    set_addr_led_color(constants::blue);
     break;
   case DeviceStatus::UNKNOWN:
     // PWM red color
-    for(int i = 0; i < red.r; ++i) {
+    for(int i = 0; i < constants::red.r; ++i) {
       led_set_RGB(i, 0, 0);
       led_render();
-      HAL_Delay(10);
+      HAL_Delay(70);
     }
-    for(int i = red.r; i >= 0; --i) {
+    for(int i = constants::red.r; i >= 0; --i) {
       led_set_RGB(i, 0, 0);
       led_render();
-      HAL_Delay(10);
+      HAL_Delay(70);
     }
     break;
   default:
-    set_addr_led_color(red);
+    set_addr_led_color(constants::red);
     break;
   }
 }
@@ -153,9 +150,9 @@ void change_addr_led_behaviour(float voltage) {
   // set_addr_led_color(yellow);
 }
 
-void reset_addr_led() {
-  set_addr_led_color(off);
-}
+// void reset_addr_led() {
+//   set_addr_led_color(off);
+// }
 
 float get_battery_voltage(ADC_HandleTypeDef* hadc) {
   static const auto samples_size = 10ul;
@@ -188,13 +185,13 @@ Color volt2color(float bat_level) {
   static const auto delta = range / 4.f;
 
   if (bat_level >= constants::v_adc - delta) {
-    return green;
+    return constants::green;
   } else if (bat_level >= constants::v_adc - 2 * delta) {
-    return yellow;
+    return constants::yellow;
   } else if (bat_level >= constants::v_adc - 3 * delta) {
-    return orange;
+    return constants::orange;
   } else {
-    return red;
+    return constants::red;
   }
 }
 

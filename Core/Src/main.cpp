@@ -191,11 +191,13 @@ int main(void)
       check_tick = 0;
 
       wait_for_connection(mode);
+      // mode.set_alert_function_mode();
+      // mode.change_mode(mode.current_mode().mode);
 
       auto bat_voltage = get_battery_voltage(&hadc);
       change_addr_led_behaviour(bat_voltage);
       if (bat_voltage < constants::v_adc_low_level) {
-        poweroff();
+        // poweroff();
       }
     }
   }
