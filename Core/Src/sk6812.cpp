@@ -8,10 +8,12 @@ extern DMA_HandleTypeDef hdma_tim3_ch4_up;
 #define PWM_LO (14)
 
 // LED parameters
-#define NUM_BPP (3) // SK6812 MINI, 3 colors
+// SK6812 MINI, 3 colors
+#define NUM_BPP (3)
 #define LEDS_COUNT (2)
-// #define NUM_BYTES (NUM_BPP * LEDS_COUNT)
-#define DATA_LEN (NUM_BPP * 8 * LEDS_COUNT)  // 8 bytes by one color
+// 8 bytes by one color. we have NUM_BPP colors and LEDS_COUNT leds
+#define DATA_LEN (NUM_BPP * 8 * LEDS_COUNT)
+// reset time. Must be >= 80 us
 #define RESET_LEN (72)
 
 namespace thermoregulator {
@@ -23,10 +25,10 @@ uint8_t rgb_arr[NUM_BPP] = {0};
 uint8_t wr_buf[WR_BUF_LEN] = {0};
 
 // Set a single color (RGB) to index
-void led_set_RGB(uint8_t r, uint8_t g, uint8_t b) {
-  rgb_arr[0] = g; // g;
-  rgb_arr[1] = r;
-  rgb_arr[2] = b; // b;
+void led_set_RGB(uint8_t red, uint8_t green, uint8_t blue) {
+  rgb_arr[0] = green;
+  rgb_arr[1] = red;
+  rgb_arr[2] = blue;
 }
 
 // Shuttle the data to the LEDs!

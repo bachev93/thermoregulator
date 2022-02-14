@@ -4,7 +4,7 @@
 #include "stm32f0xx_hal_gpio.h"
 
 namespace thermoregulator {
-enum class OperatingModeType {LOW, MIDDLE, HIGH, DISABLE};
+enum class OperatingModeType {LOW, MIDDLE, HIGH};
 struct OperatingModeParams {
   OperatingModeType mode;
   int16_t low_threshold;
@@ -39,12 +39,12 @@ const uint16_t idle_time = 15;
 // blink show status time, in sec
 const uint8_t status_time = 2;
 
+// I2C response time. in sec
 const uint8_t wait_for_tmp117 = 120;
 
 const OperatingModeParams low_mode = {OperatingModeType::LOW, 38, 40};
 const OperatingModeParams middle_mode = {OperatingModeType::MIDDLE, 39, 41};
 const OperatingModeParams high_mode = {OperatingModeType::HIGH, 40, 42};
-const OperatingModeParams disable_mode = {OperatingModeType::DISABLE, 0, 0};
 
 const Pin mode_led1 = {GPIOA, GPIO_PIN_7};
 const Pin mode_led2 = {GPIOA, GPIO_PIN_6};

@@ -33,7 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define LEDS_OFF 0
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -77,7 +77,7 @@ bool check_device_state = true;
 bool is_heating = true;
 uint16_t working_tick = 0;
 
-bool btn_1st_press = false;
+uint8_t btn_press_cnt = 0;
 uint8_t status_tick = 0;
 
 uint8_t wait_tick = 0;
@@ -90,7 +90,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
   check_device_state = true;
 
-  if(btn_1st_press) {
+  if(btn_press_cnt > 0) {
     ++status_tick;
   }
 }
@@ -148,17 +148,14 @@ int main(void)
     }
   }
 
-  mode.change_mode();
-  mode.blink_leds();
-  if (LEDS_OFF) {
-    HAL_Delay(constants::status_time * 1000u);
-    mode.reset_leds();
-  }
+  mode.set_alert_function_mode();
+  mode.change_mode(OperatingModeType::LOW);
 
   while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    // TODO: add reset white leds while charging or chdrged state
     if (check_device_state) {
       check_device_state = false;
       auto device_state = device_status();
@@ -173,14 +170,12 @@ int main(void)
     if (last_device_state == DeviceStatus::DEVICE_WORKING) {
       if (is_heating) {
         if (working_tick >= constants::working_time) {
-          // set tmp117 limits to 0 degrees
           mode.disable_heating();
           working_tick = 0;
           is_heating = false;
         }
       } else {
         if (working_tick >= constants::idle_time) {
-          // set tmp117 limits to operating mode
           mode.enable_heating();
           working_tick = 0;
           is_heating = true;
@@ -192,20 +187,19 @@ int main(void)
 
     auto button_press_state = check_button_press(constants::btn.port, constants::btn.pin, 50, 3000);
     if (button_press_state == ButtonPressType::SHORT_PRESS) {
-      if (btn_1st_press) {
-        mode.change_mode();
-        mode.blink_leds();
-        status_tick = 0;
-      } else {
-        btn_1st_press = true;
-        mode.blink_leds();
-      }
+      ++btn_press_cnt;
     }
 
     if(status_tick >= constants::status_time) {
-      btn_1st_press = false;
+      if(btn_press_cnt >= 3) {
+        btn_press_cnt = 3;
+      }
+
+      auto mode_type = static_cast<OperatingModeType>(btn_press_cnt - 1);
+      mode.change_mode(mode_type);
+
+      btn_press_cnt = 0;
       status_tick = 0;
-      if (LEDS_OFF) { mode.reset_leds(); }
     }
 
     if (adc_tick >= constants::battery_check_time) {
@@ -213,7 +207,6 @@ int main(void)
       auto bat_voltage = get_battery_voltage(&hadc);
       change_addr_led_behaviour(bat_voltage);
       if (bat_voltage < constants::v_adc_low_level) {
-        // printf("battery charge level below %f volts\r\n", constants::v_adc_low_level);
         poweroff();
       }
     }

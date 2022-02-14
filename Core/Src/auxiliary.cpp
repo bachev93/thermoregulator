@@ -3,7 +3,7 @@
 
 namespace thermoregulator {
 OperatingMode::OperatingMode(I2C_HandleTypeDef* hi2c) :
-  params_(constants::disable_mode),
+  params_(constants::low_mode),
   sensor1_(hi2c, ADDR::FIRST),
   sensor2_(hi2c, ADDR::SECOND) {}
 
@@ -11,23 +11,28 @@ OperatingMode::operator bool() {
   return sensor1_.check() && sensor2_.check();
 }
 
-void OperatingMode::change_mode() {
-  switch (params_.mode) {
-  case OperatingModeType::LOW:
-    params_ = constants::middle_mode; break;
-  case OperatingModeType::MIDDLE:
-    params_ = constants::high_mode; break;
-  case OperatingModeType::HIGH:
-    params_ = constants::low_mode; break;
-  default:
-    sensor1_.enableAlertFunctionMode();
-    sensor2_.enableAlertFunctionMode();
-    params_ = constants::low_mode;
+void OperatingMode::change_mode(OperatingModeType mode_type) {
+  switch (mode_type) {
+    case OperatingModeType::LOW:
+      params_ = constants::low_mode;
+      break;
+    case OperatingModeType::MIDDLE:
+      params_ = constants::middle_mode;
+      break;
+    case OperatingModeType::HIGH:
+      params_ = constants::high_mode;
+      break;
+    default:
+      params_ = constants::low_mode;
+      break;
   }
+
   sensor1_.setLowLimit(params_.low_threshold);
   sensor1_.setHighLimit(params_.high_threshold);
   sensor2_.setLowLimit(params_.low_threshold);
   sensor2_.setHighLimit(params_.high_threshold);
+
+  blink_leds();
 }
 
 void OperatingMode::blink_leds() const {
@@ -37,16 +42,17 @@ void OperatingMode::blink_leds() const {
   HAL_GPIO_WritePin(c::mode_led3.port, c::mode_led3.pin, GPIO_PinState(params_.mode > OperatingModeType::MIDDLE));
 }
 
-void OperatingMode::reset_leds() const {
-  // printf("reset status leds\r\n");
-  HAL_GPIO_WritePin(constants::mode_led1.port, constants::mode_led1.pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(constants::mode_led2.port, constants::mode_led2.pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(constants::mode_led3.port, constants::mode_led3.pin, GPIO_PIN_RESET);
+void OperatingMode::set_alert_function_mode() {
+  sensor1_.enableAlertFunctionMode();
+  sensor2_.enableAlertFunctionMode();
 }
 
-OperatingModeParams OperatingMode::current_mode() const {
-  return params_;
-}
+// void OperatingMode::reset_leds() const {
+//   // printf("reset status leds\r\n");
+//   HAL_GPIO_WritePin(constants::mode_led1.port, constants::mode_led1.pin, GPIO_PIN_RESET);
+//   HAL_GPIO_WritePin(constants::mode_led2.port, constants::mode_led2.pin, GPIO_PIN_RESET);
+//   HAL_GPIO_WritePin(constants::mode_led3.port, constants::mode_led3.pin, GPIO_PIN_RESET);
+// }
 
 void OperatingMode::enable_heating() {
   sensor1_.setLowLimit(params_.low_threshold);

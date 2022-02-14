@@ -13,10 +13,9 @@ namespace thermoregulator {
 class OperatingMode {
   public:
     explicit OperatingMode(I2C_HandleTypeDef* hi2c);
-    void change_mode();
-    void blink_leds() const;
-    void reset_leds() const;
-    OperatingModeParams current_mode() const;
+    void change_mode(OperatingModeType mode_type);
+    // void reset_leds() const;
+    void set_alert_function_mode();
     void enable_heating();
     void disable_heating();
     operator bool();
@@ -24,6 +23,8 @@ class OperatingMode {
     OperatingModeParams params_;
     tmp117 sensor1_;
     tmp117 sensor2_;
+
+    void blink_leds() const;
 };
 
 struct Color { uint8_t r, g, b; };
