@@ -7,7 +7,7 @@ OperatingMode::OperatingMode(I2C_HandleTypeDef* hi2c) :
   sensor1_(hi2c, ADDR::FIRST),
   sensor2_(hi2c, ADDR::SECOND) {}
 
-OperatingMode::operator bool() {
+OperatingMode::operator bool() const {
   return sensor1_.check() && sensor2_.check();
 }
 
@@ -114,13 +114,33 @@ void change_addr_led_behaviour(DeviceStatus dev_state) {
     // в режиме работы будет повторный вызов изменения состояния по напряжению
     break;
   case DeviceStatus::DEVICE_CHARGING:
-    set_addr_led_color(blue);
-    HAL_Delay(1000);
-    reset_addr_led();
-    HAL_Delay(1000);
+    // PWM blue color
+    for(int i = 0; i < blue.b; ++i) {
+      led_set_RGB(0, 0, i);
+      led_render();
+      HAL_Delay(10);
+    }
+    for(int i = blue.b; i >= 0; --i) {
+      led_set_RGB(0, 0, i);
+      led_render();
+      HAL_Delay(10);
+    }
     break;
   case DeviceStatus::DEVICE_CHARGED:
     set_addr_led_color(blue);
+    break;
+  case DeviceStatus::UNKNOWN:
+    // PWM red color
+    for(int i = 0; i < red.r; ++i) {
+      led_set_RGB(i, 0, 0);
+      led_render();
+      HAL_Delay(10);
+    }
+    for(int i = red.r; i >= 0; --i) {
+      led_set_RGB(i, 0, 0);
+      led_render();
+      HAL_Delay(10);
+    }
     break;
   default:
     set_addr_led_color(red);
@@ -153,14 +173,14 @@ float get_battery_voltage(ADC_HandleTypeDef* hadc) {
 }
 
 void poweroff() {
-  // printf("powering off\r\n");
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  GPIO_InitStruct.Pin = constants::btn.pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(constants::btn.port, &GPIO_InitStruct);
 
-  // GPIO_InitTypeDef GPIO_InitStruct = {0};
-  // GPIO_InitStruct.Pin = constants::btn.pin;
-  // GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  // GPIO_InitStruct.Pull = GPIO_NOPULL;
-  // GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  // HAL_GPIO_Init(constants::btn.port, &GPIO_InitStruct);
+  HAL_GPIO_WritePin(constants::btn.port, constants::btn.pin, GPIO_PIN_SET);
 }
 
 Color volt2color(float bat_level) {

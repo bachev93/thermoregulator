@@ -22,17 +22,17 @@ enum class TMP117_Register : uint8_t {
 class tmp117 {
 public:
   explicit tmp117(I2C_HandleTypeDef* hi2c, ADDR addr);
-  bool check();
+  bool check() const;
   void setLowLimit(float lowLimit);
   void setHighLimit(float highLimit);
   void enableAlertFunctionMode();
-  float readTempC();
+  float readTempC() const;
 
 private:
   I2C_HandleTypeDef* hi2c_;
   ADDR addr_;
 
-  int16_t readRegister(TMP117_Register reg);
+  int16_t readRegister(TMP117_Register reg) const;
   HAL_StatusTypeDef writeRegister(TMP117_Register reg, uint16_t data);
 };
 }

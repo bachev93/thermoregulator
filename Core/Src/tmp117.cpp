@@ -16,7 +16,7 @@ tmp117::tmp117(I2C_HandleTypeDef* hi2c, ADDR addr) :
  * @brief 
  * check connection and device id
  */
-bool tmp117::check() {
+bool tmp117::check() const {
   auto deviceID = readRegister(TMP117_Register::TMP117_DEVICE_ID);
   return DEVICE_ID_VALUE == deviceID;
 }
@@ -79,7 +79,7 @@ HAL_StatusTypeDef tmp117::writeRegister(TMP117_Register reg, uint16_t data) {
   * @param reg - регистр, из которого надо прочитать
   * @return uint16_t
   */
-int16_t tmp117::readRegister(TMP117_Register reg) {
+int16_t tmp117::readRegister(TMP117_Register reg) const {
   auto state = HAL_I2C_Master_Transmit(hi2c_, static_cast<uint16_t>(addr_), reinterpret_cast<uint8_t *>(&reg), 1, constants::i2c_timeout_ms);
   if (state == HAL_OK) {
     uint8_t buf[2] = {0};
@@ -105,7 +105,7 @@ int16_t tmp117::readRegister(TMP117_Register reg) {
    and positive if the bit is 0.
   * @return float
   */
-float tmp117::readTempC() {
+float tmp117::readTempC() const {
   int16_t digital_tempC = readRegister(TMP117_Register::TMP117_TEMP_RESULT);
   return digital_tempC * TMP117_RESOLUTION;
 }

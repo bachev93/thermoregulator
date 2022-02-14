@@ -63,15 +63,15 @@ static void MX_DMA_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
-
+void wait_for_connection(const thermoregulator::OperatingMode& mode);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 namespace {
-uint8_t adc_tick = thermoregulator::constants::battery_check_time;
+uint8_t check_tick = thermoregulator::constants::check_time;
 
-thermoregulator::DeviceStatus last_device_state = thermoregulator::DeviceStatus::UNKNOWN;
+auto device_state = thermoregulator::DeviceStatus::UNKNOWN;
 bool check_device_state = true;
 
 bool is_heating = true;
@@ -84,7 +84,7 @@ uint8_t wait_tick = 0;
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-  ++adc_tick;
+  ++check_tick;
   ++working_tick;
   ++wait_tick;
 
@@ -137,16 +137,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   OperatingMode mode(&hi2c1);
-  while (!mode) {
-    change_addr_led_behaviour(last_device_state);
-    HAL_Delay(1000);
-    reset_addr_led();
-    HAL_Delay(1000);
-
-    if (wait_tick >= constants::wait_for_tmp117) {
-      poweroff();
-    }
-  }
+  wait_for_connection(mode);
 
   mode.set_alert_function_mode();
   mode.change_mode(OperatingModeType::LOW);
@@ -155,19 +146,13 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // TODO: add reset white leds while charging or chdrged state
     if (check_device_state) {
       check_device_state = false;
-      auto device_state = device_status();
-      last_device_state = device_state;
-      change_addr_led_behaviour(last_device_state);
-      // if (last_device_state != device_state) {
-      //   last_device_state = device_state;
-      //   change_addr_led_behaviour(last_device_state);
-      // }
+      device_state = device_status();
+      change_addr_led_behaviour(device_state);
     }
 
-    if (last_device_state == DeviceStatus::DEVICE_WORKING) {
+    if (device_state == DeviceStatus::DEVICE_WORKING) {
       if (is_heating) {
         if (working_tick >= constants::working_time) {
           mode.disable_heating();
@@ -202,8 +187,11 @@ int main(void)
       status_tick = 0;
     }
 
-    if (adc_tick >= constants::battery_check_time) {
-      adc_tick = 0;
+    if (check_tick >= constants::check_time) {
+      check_tick = 0;
+
+      wait_for_connection(mode);
+
       auto bat_voltage = get_battery_voltage(&hadc);
       change_addr_led_behaviour(bat_voltage);
       if (bat_voltage < constants::v_adc_low_level) {
@@ -511,7 +499,18 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void wait_for_connection(const thermoregulator::OperatingMode& mode) {
+  using namespace thermoregulator;
+  while(!mode) {
+    change_addr_led_behaviour(DeviceStatus::UNKNOWN);
 
+    if (wait_tick >= constants::wait_for_tmp117) {
+      poweroff();
+    }
+  }
+
+  wait_tick = 0;
+}
 /* USER CODE END 4 */
 
 /**

@@ -18,7 +18,7 @@ class OperatingMode {
     void set_alert_function_mode();
     void enable_heating();
     void disable_heating();
-    operator bool();
+    operator bool() const;
   private:
     OperatingModeParams params_;
     tmp117 sensor1_;
@@ -37,7 +37,7 @@ static const Color blue = {0, 0, 255};
 static const Color off = {0, 0, 0};
 
 Color volt2color(float bat_level);
-void set_addr_led_color(Color);
+void set_addr_led_color(Color c);
 
 enum class ButtonPressType {SHORT_PRESS, LONG_PRESS, NO_PRESS};
 ButtonPressType check_button_press(GPIO_TypeDef* port, uint16_t pin,

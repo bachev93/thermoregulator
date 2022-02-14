@@ -25,8 +25,8 @@ const float v_adc = 2.1f;
 // ADC pin voltage level for powering off the device, in volts
 const float v_adc_low_level = 1.5f;
 
-// battery charging level check time, in sec
-const uint8_t battery_check_time = 10;
+// battery charging level and I2C connection check time, in sec
+const uint8_t check_time = 10;
 
 // working time, in sec
 // const int working_time = 1200;
@@ -40,7 +40,8 @@ const uint16_t idle_time = 15;
 const uint8_t status_time = 2;
 
 // I2C response time. in sec
-const uint8_t wait_for_tmp117 = 120;
+// const uint8_t wait_for_tmp117 = 120;
+const uint8_t wait_for_tmp117 = 30;
 
 const OperatingModeParams low_mode = {OperatingModeType::LOW, 38, 40};
 const OperatingModeParams middle_mode = {OperatingModeType::MIDDLE, 39, 41};
@@ -54,7 +55,6 @@ const Pin charge_state_pin1 = {GPIOA, GPIO_PIN_2};
 const Pin charge_state_pin2 = {GPIOA, GPIO_PIN_3};
 
 const auto i2c_timeout_ms = 1000u;
-
 }
 }
 

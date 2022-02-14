@@ -40,7 +40,7 @@ void led_render() {
     return;
   }
 
-  for(uint_fast8_t i = 0; i < 8; ++i) {
+  for(uint8_t i = 0; i < 8; ++i) {
     // first LED
     wr_buf[i     ] = PWM_LO << (((rgb_arr[0] << i) & 0x80) > 0);
     wr_buf[i +  8] = PWM_LO << (((rgb_arr[1] << i) & 0x80) > 0);
@@ -57,6 +57,5 @@ void led_render() {
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
   for(uint8_t i = 0; i < WR_BUF_LEN; ++i) wr_buf[i] = 0;
   HAL_TIM_PWM_Stop_DMA(&htim3, TIM_CHANNEL_4);
-
 }
 }
