@@ -147,20 +147,15 @@ void change_addr_led_behaviour(DeviceStatus dev_state) {
 
 void change_addr_led_behaviour(float voltage) {
   set_addr_led_color(volt2color(voltage));
-  // set_addr_led_color(yellow);
 }
 
-// void reset_addr_led() {
-//   set_addr_led_color(off);
-// }
-
 float get_battery_voltage(ADC_HandleTypeDef* hadc) {
-  static const auto samples_size = 10ul;
-  uint32_t accumulator = 0u;
+  static const uint8_t samples_size = 10;
+  uint32_t accumulator = 0;
 
   HAL_ADC_Start(hadc);
-  for(size_t i = 0ul; i < samples_size; ++i) {
-    HAL_ADC_PollForConversion(hadc, 1);
+  for(uint8_t i = 0; i < samples_size; ++i) {
+    HAL_ADC_PollForConversion(hadc, 100);
     accumulator += HAL_ADC_GetValue(hadc);
   }
   HAL_ADC_Stop(hadc);

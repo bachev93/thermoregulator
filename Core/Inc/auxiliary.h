@@ -38,7 +38,6 @@ enum class DeviceStatus {DEVICE_WORKING, DEVICE_CHARGING, DEVICE_CHARGED, UNKNOW
 DeviceStatus device_status();
 void change_addr_led_behaviour(DeviceStatus dev_state);
 void change_addr_led_behaviour(float);
-// void reset_addr_led();
 
 float get_battery_voltage(ADC_HandleTypeDef* hadc);
 void poweroff();

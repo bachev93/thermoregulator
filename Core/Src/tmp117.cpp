@@ -95,18 +95,4 @@ int16_t tmp117::readRegister(TMP117_Register reg) const {
   return -1;
 }
 
-/**
- * @brief
- * This function reads the temperature reading from the sensor
-   and returns the value in degrees celsius.
-
-   NOTE: The data type of digitalTemp is a signed integer, meaning that the
-   value of the binary number being read will be negative if the MSB is 1,
-   and positive if the bit is 0.
-  * @return float
-  */
-float tmp117::readTempC() const {
-  int16_t digital_tempC = readRegister(TMP117_Register::TMP117_TEMP_RESULT);
-  return digital_tempC * TMP117_RESOLUTION;
-}
 }

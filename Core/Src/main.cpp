@@ -197,7 +197,7 @@ int main(void)
       auto bat_voltage = get_battery_voltage(&hadc);
       change_addr_led_behaviour(bat_voltage);
       if (bat_voltage < constants::v_adc_low_level) {
-        // poweroff();
+        poweroff();
       }
     }
   }

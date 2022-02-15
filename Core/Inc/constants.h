@@ -37,19 +37,19 @@ const float v_adc_low_level = 1.5f;
 const uint8_t check_time = 10;
 
 // working time, in sec
-// const int working_time = 1200;
-const uint16_t working_time = 30;
+const int working_time = 1200;
+// const uint16_t working_time = 30;
 
 // idle time, in sec
-// const int idle_time = 300;
-const uint16_t idle_time = 15;
+const int idle_time = 300;
+// const uint16_t idle_time = 15;
 
 // blink show status time, in sec
 const uint8_t status_time = 2;
 
 // I2C response time. in sec
-// const uint8_t wait_for_tmp117 = 120;
-const uint8_t wait_for_tmp117 = 15;
+const uint8_t wait_for_tmp117 = 120;
+// const uint8_t wait_for_tmp117 = 15;
 
 const OperatingModeParams low_mode = {OperatingModeType::LOW, 38, 40};
 const OperatingModeParams middle_mode = {OperatingModeType::MIDDLE, 39, 41};
@@ -69,7 +69,6 @@ const Color green(0, 255, 0);
 const Color blue(0, 0, 255);
 const Color orange(255, 153, 51);
 const Color yellow(255, 255, 0);
-// const Color off = {0, 0, 0};
 }
 }
 

@@ -26,7 +26,6 @@ public:
   void setLowLimit(float lowLimit);
   void setHighLimit(float highLimit);
   void enableAlertFunctionMode();
-  float readTempC() const;
 
 private:
   I2C_HandleTypeDef* hi2c_;
